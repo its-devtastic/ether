@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from rest_framework.relations import PrimaryKeyRelatedField
+from rest_framework.relations import PrimaryKeyRelatedField, ManyRelatedField
 from rest_framework.serializers import ModelSerializer
 
 
@@ -30,6 +30,14 @@ class JsonApiV11ModelSerializer(ModelSerializer):
                             'type': rel_api_id
                         }
                     }
+            if type(field) is ManyRelatedField:
+                value = rep[key]
+                field_meta = field.child_relation.queryset.model._meta
+                rel_api_id = field_meta.api_id if hasattr(field_meta, 'api_id') else f'{field_meta.model_name}s'
+
+                relationships[key] = {
+                    'data': [{'id': v, 'type': rel_api_id} for v in value]
+                }
             else:
                 attributes[key] = rep[key]
 
@@ -44,16 +52,14 @@ class JsonApiV11ModelSerializer(ModelSerializer):
         }
 
     def to_internal_value(self, data):
-        data = data.get('data')
-
-        if not data:
-            raise serializers.ValidationError({'data': 'No root data property found.'})
+        if self.context['request'].method in ['PATCH', 'POST']:
+            data = data.get('data', {})
 
         if not data.get('type'):
             raise serializers.ValidationError(
-                {'data.type': 'No type found. Make sure to include the type of the document.'})
+                {'type': 'No type found. Make sure to include the type of the document.'})
 
         attributes = data.get('attributes', {})
-        relationships = {k: v['data']['id'] for k, v in data.get('relationships', {}).items()}
+        relationships = {k: v and v.get('data', {}).get('id') for k, v in data.get('relationships', {}).items()}
 
         return super().to_internal_value({**attributes, **relationships})

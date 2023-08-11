@@ -16,7 +16,7 @@ class JsonApiV11Renderer(CamelCaseJSONRenderer):
         is_paginated = view.pagination_class is not None
         is_exception = res.exception
 
-        # Current view action: either retrieve, create, update, list or delete
+        # Current view action: either retrieve, create, partial_update, list or delete
         action = renderer_context['view'].action
 
         result = {}
@@ -36,7 +36,7 @@ class JsonApiV11Renderer(CamelCaseJSONRenderer):
                 }
 
             # Handle single documents
-            if action in ['retrieve', 'create', 'update']:
+            if action in ['retrieve', 'create', 'partial_update', 'update_relationships']:
                 result['data'] = data
 
             # Handle document creation
