@@ -1,6 +1,7 @@
 from django.apps import AppConfig
 from rest_framework.viewsets import ModelViewSet
 
+from .exceptions import Conflict
 from .router import rest_router
 from .serializers import JsonApiV11ModelSerializer
 from ..contenttypes import registry
@@ -25,6 +26,11 @@ class EtherRestConfig(AppConfig):
                 class ViewSet(ModelViewSet):
                     queryset = config['model'].objects.all()
                     serializer_class = Serializer
+
+                    def perform_create(self, serializer):
+                        if serializer.initial_data.get('data', {}).get('type') != basename:
+                            raise Conflict(detail='Type does not match base name')
+                        return super().perform_create(serializer)
 
                 rest_router.register(basename, ViewSet)
 
