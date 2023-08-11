@@ -1,3 +1,4 @@
+from rest_framework import serializers
 from rest_framework.relations import PrimaryKeyRelatedField
 from rest_framework.serializers import ModelSerializer
 
@@ -41,3 +42,18 @@ class JsonApiV11ModelSerializer(ModelSerializer):
                 'self': f'{req.scheme}://{req.META["HTTP_HOST"]}/{api_id}/{obj.id}'
             }
         }
+
+    def to_internal_value(self, data):
+        data = data.get('data')
+
+        if not data:
+            raise serializers.ValidationError({'data': 'No root data property found.'})
+
+        if not data.get('type'):
+            raise serializers.ValidationError(
+                {'data.type': 'No type found. Make sure to include the type of the document.'})
+
+        attributes = data.get('attributes', {})
+        relationships = {k: v['data']['id'] for k, v in data.get('relationships', {}).items()}
+
+        return super().to_internal_value({**attributes, **relationships})
