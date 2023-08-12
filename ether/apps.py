@@ -13,6 +13,6 @@ class EtherConfig(AppConfig):
         if not self.initialized:
             log(':mag:', 'Discovering content types...')
             autodiscover_modules('contenttypes')
-            log(':white_check_mark:', '[green]Found {0} contenttypes[/green]'.format(len(registry)))
+            log(':white_check_mark:', f'[green]Found {len(registry)} contenttypes[/green]')
 
             self.initialized = True
